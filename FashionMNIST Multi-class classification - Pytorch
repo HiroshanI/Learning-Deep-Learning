@@ -1,1 +1,692 @@
-{"metadata":{"kernelspec":{"language":"python","display_name":"Python 3","name":"python3"},"language_info":{"name":"python","version":"3.10.13","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kaggle":{"accelerator":"none","dataSources":[],"dockerImageVersionId":30698,"isInternetEnabled":true,"language":"python","sourceType":"notebook","isGpuEnabled":false}},"nbformat_minor":4,"nbformat":4,"cells":[{"cell_type":"code","source":"import torch\nfrom torch import nn\nfrom torch.utils.data import DataLoader\nfrom torchvision import datasets\nfrom torchvision.transforms import ToTensor","metadata":{"execution":{"iopub.status.busy":"2024-04-25T16:47:40.846295Z","iopub.execute_input":"2024-04-25T16:47:40.847272Z","iopub.status.idle":"2024-04-25T16:47:40.853060Z","shell.execute_reply.started":"2024-04-25T16:47:40.847226Z","shell.execute_reply":"2024-04-25T16:47:40.851933Z"},"trusted":true},"execution_count":2,"outputs":[]},{"cell_type":"code","source":"# Get testing data\ntrain_data = datasets.FashionMNIST(\n    root=\"data\",\n    train=True,\n    download=True,\n    transform=ToTensor(),\n)\n\n# Get testing data\ntest_data = datasets.FashionMNIST(\n    root=\"data\",\n    train=False,\n    download=True,\n    transform=ToTensor(),\n)","metadata":{"execution":{"iopub.status.busy":"2024-04-25T16:47:40.854743Z","iopub.execute_input":"2024-04-25T16:47:40.855453Z","iopub.status.idle":"2024-04-25T16:47:45.990748Z","shell.execute_reply.started":"2024-04-25T16:47:40.855412Z","shell.execute_reply":"2024-04-25T16:47:45.989606Z"},"trusted":true},"execution_count":3,"outputs":[{"name":"stdout","text":"Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz\nDownloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz to data/FashionMNIST/raw/train-images-idx3-ubyte.gz\n","output_type":"stream"},{"name":"stderr","text":"100%|██████████| 26421880/26421880 [00:01<00:00, 17596247.73it/s]\n","output_type":"stream"},{"name":"stdout","text":"Extracting data/FashionMNIST/raw/train-images-idx3-ubyte.gz to data/FashionMNIST/raw\n\nDownloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz\nDownloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz to data/FashionMNIST/raw/train-labels-idx1-ubyte.gz\n","output_type":"stream"},{"name":"stderr","text":"100%|██████████| 29515/29515 [00:00<00:00, 303321.44it/s]\n","output_type":"stream"},{"name":"stdout","text":"Extracting data/FashionMNIST/raw/train-labels-idx1-ubyte.gz to data/FashionMNIST/raw\n\nDownloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz\nDownloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz to data/FashionMNIST/raw/t10k-images-idx3-ubyte.gz\n","output_type":"stream"},{"name":"stderr","text":"100%|██████████| 4422102/4422102 [00:00<00:00, 5551550.11it/s]\n","output_type":"stream"},{"name":"stdout","text":"Extracting data/FashionMNIST/raw/t10k-images-idx3-ubyte.gz to data/FashionMNIST/raw\n\nDownloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz\nDownloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz to data/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz\n","output_type":"stream"},{"name":"stderr","text":"100%|██████████| 5148/5148 [00:00<00:00, 14870714.18it/s]","output_type":"stream"},{"name":"stdout","text":"Extracting data/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to data/FashionMNIST/raw\n\n","output_type":"stream"},{"name":"stderr","text":"\n","output_type":"stream"}]},{"cell_type":"code","source":"batch_size = 64\n\n# Create Dataloaders\ntrain_dataloader = DataLoader(train_data, batch_size=batch_size)\ntest_dataloader = DataLoader(test_data, batch_size=batch_size)\n\nfor X, y in train_dataloader:\n    print(f\"X(features):\", f\"SHAPE = {X.shape}\", f\"DTYPE = {X.dtype}\", \n          f\"DIM = {X.ndim}\", sep='\\n\\t')\n    print(f\"y(labels):\", f\"SHAPE = {y.shape}\", f\"DTYPE = {y.dtype}\", \n          f\"DIM = {y.ndim}\", sep='\\n\\t')\n    break","metadata":{"execution":{"iopub.status.busy":"2024-04-25T17:00:56.920940Z","iopub.execute_input":"2024-04-25T17:00:56.921459Z","iopub.status.idle":"2024-04-25T17:00:56.940698Z","shell.execute_reply.started":"2024-04-25T17:00:56.921423Z","shell.execute_reply":"2024-04-25T17:00:56.939397Z"},"trusted":true},"execution_count":34,"outputs":[{"name":"stdout","text":"X(features):\n\tSHAPE = torch.Size([64, 1, 28, 28])\n\tDTYPE = torch.float32\n\tDIM = 4\ny(labels):\n\tSHAPE = torch.Size([64])\n\tDTYPE = torch.int64\n\tDIM = 1\n","output_type":"stream"}]},{"cell_type":"code","source":"# Get cpu, gpu or mps device for training.\ndevice = (\n    \"cuda\"\n    if torch.cuda.is_available()\n    else \"mps\"\n    if torch.backends.mps.is_available()\n    else \"cpu\"\n)\nprint(f\"Using {device} device\")","metadata":{"execution":{"iopub.status.busy":"2024-04-25T17:02:55.878750Z","iopub.execute_input":"2024-04-25T17:02:55.879597Z","iopub.status.idle":"2024-04-25T17:02:55.886929Z","shell.execute_reply.started":"2024-04-25T17:02:55.879553Z","shell.execute_reply":"2024-04-25T17:02:55.885345Z"},"trusted":true},"execution_count":42,"outputs":[{"name":"stdout","text":"Using cpu device\n","output_type":"stream"}]},{"cell_type":"code","source":"# Define model\nclass NeuralNetwork(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.flatten = nn.Flatten()\n        self.linear_relu_stack = nn.Sequential(\n            nn.Linear(28*28, 512),\n            nn.ReLU(),\n            nn.Linear(512, 512),\n            nn.ReLU(),\n            nn.Linear(512, 10)\n        )\n\n    def forward(self, x):\n        x = self.flatten(x)\n        logits = self.linear_relu_stack(x)\n        return logits\n    \nmodel = NeuralNetwork().to(device)\nprint(model)\n\n# Define loss function and optimizer (to train model)\nloss_fn = nn.CrossEntropyLoss()\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)","metadata":{"execution":{"iopub.status.busy":"2024-04-25T17:06:46.953423Z","iopub.execute_input":"2024-04-25T17:06:46.955326Z","iopub.status.idle":"2024-04-25T17:06:46.974477Z","shell.execute_reply.started":"2024-04-25T17:06:46.955267Z","shell.execute_reply":"2024-04-25T17:06:46.972998Z"},"trusted":true},"execution_count":44,"outputs":[{"name":"stdout","text":"NeuralNetwork(\n  (flatten): Flatten(start_dim=1, end_dim=-1)\n  (linear_relu_stack): Sequential(\n    (0): Linear(in_features=784, out_features=512, bias=True)\n    (1): ReLU()\n    (2): Linear(in_features=512, out_features=512, bias=True)\n    (3): ReLU()\n    (4): Linear(in_features=512, out_features=10, bias=True)\n  )\n)\n","output_type":"stream"}]},{"cell_type":"code","source":"def train(dataloader, model, loss_fn, optim):\n    model.train()    \n    size = len(dataloader.dataset)\n    \n    for i, (X,y) in enumerate(dataloader):\n        X, y = X.to(device), y.to(device)\n        \n        # Predict and compute error\n        pred = model(X)\n        loss = loss_fn(pred, y)\n        \n        # Backward propogation\n        loss.backward()\n        optim.step()\n        optim.zero_grad()\n        \n        if i % 100 == 0:\n            loss, current = loss.item(), (i + 1) * len(X)\n            print(f\"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]\")","metadata":{"execution":{"iopub.status.busy":"2024-04-25T19:11:02.342257Z","iopub.execute_input":"2024-04-25T19:11:02.343252Z","iopub.status.idle":"2024-04-25T19:11:02.350114Z","shell.execute_reply.started":"2024-04-25T19:11:02.343216Z","shell.execute_reply":"2024-04-25T19:11:02.349039Z"},"trusted":true},"execution_count":50,"outputs":[]},{"cell_type":"code","source":"def test(dataloader, model, loss_fn):\n    model.eval()\n    size = len(dataloader.dataset)\n    n_batches = len(dataloader) # 60000/64\n    test_loss, correct = 0, 0\n    \n    with torch.no_grad():\n        for X, y in dataloader:\n            X, y = X.to(device), y.to(device)\n            pred = model(X)\n            test_loss += loss_fn(pred, y).item()\n            correct += (pred.argmax(1) == y).type(torch.float).sum().item()\n    test_loss /= n_batches\n    correct /= size\n    \n    print(f\"Test Error: \\n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \\n\")","metadata":{"execution":{"iopub.status.busy":"2024-04-25T19:11:02.562164Z","iopub.execute_input":"2024-04-25T19:11:02.562533Z","iopub.status.idle":"2024-04-25T19:11:02.569607Z","shell.execute_reply.started":"2024-04-25T19:11:02.562505Z","shell.execute_reply":"2024-04-25T19:11:02.568293Z"},"trusted":true},"execution_count":51,"outputs":[]},{"cell_type":"code","source":"epochs = 5\nfor t in range(epochs):\n    print(f\"Epoch {t+1}\\n-------------------------------\")\n    train(train_dataloader, model, loss_fn, optimizer)\n    test(test_dataloader, model, loss_fn)\nprint(\"Done!\")","metadata":{"execution":{"iopub.status.busy":"2024-04-25T19:11:02.962212Z","iopub.execute_input":"2024-04-25T19:11:02.963040Z","iopub.status.idle":"2024-04-25T19:12:03.981256Z","shell.execute_reply.started":"2024-04-25T19:11:02.963000Z","shell.execute_reply":"2024-04-25T19:12:03.980109Z"},"trusted":true},"execution_count":52,"outputs":[{"name":"stdout","text":"Epoch 1\n-------------------------------\nloss: 2.300623  [   64/60000]\nloss: 2.290030  [ 6464/60000]\nloss: 2.272900  [12864/60000]\nloss: 2.267833  [19264/60000]\nloss: 2.247201  [25664/60000]\nloss: 2.213831  [32064/60000]\nloss: 2.227602  [38464/60000]\nloss: 2.189332  [44864/60000]\nloss: 2.190747  [51264/60000]\nloss: 2.149898  [57664/60000]\nTest Error: \n Accuracy: 42.8%, Avg loss: 2.148727 \n\nEpoch 2\n-------------------------------\nloss: 2.158704  [   64/60000]\nloss: 2.148257  [ 6464/60000]\nloss: 2.094247  [12864/60000]\nloss: 2.110499  [19264/60000]\nloss: 2.058395  [25664/60000]\nloss: 1.994149  [32064/60000]\nloss: 2.035404  [38464/60000]\nloss: 1.951783  [44864/60000]\nloss: 1.959746  [51264/60000]\nloss: 1.873857  [57664/60000]\nTest Error: \n Accuracy: 56.2%, Avg loss: 1.878637 \n\nEpoch 3\n-------------------------------\nloss: 1.911020  [   64/60000]\nloss: 1.875753  [ 6464/60000]\nloss: 1.769229  [12864/60000]\nloss: 1.808267  [19264/60000]\nloss: 1.693661  [25664/60000]\nloss: 1.648062  [32064/60000]\nloss: 1.680053  [38464/60000]\nloss: 1.581036  [44864/60000]\nloss: 1.606799  [51264/60000]\nloss: 1.484328  [57664/60000]\nTest Error: \n Accuracy: 59.9%, Avg loss: 1.510757 \n\nEpoch 4\n-------------------------------\nloss: 1.579195  [   64/60000]\nloss: 1.535974  [ 6464/60000]\nloss: 1.403465  [12864/60000]\nloss: 1.465219  [19264/60000]\nloss: 1.344077  [25664/60000]\nloss: 1.346779  [32064/60000]\nloss: 1.361495  [38464/60000]\nloss: 1.290256  [44864/60000]\nloss: 1.321368  [51264/60000]\nloss: 1.206123  [57664/60000]\nTest Error: \n Accuracy: 62.6%, Avg loss: 1.241378 \n\nEpoch 5\n-------------------------------\nloss: 1.320261  [   64/60000]\nloss: 1.294980  [ 6464/60000]\nloss: 1.146108  [12864/60000]\nloss: 1.239628  [19264/60000]\nloss: 1.117328  [25664/60000]\nloss: 1.147138  [32064/60000]\nloss: 1.168069  [38464/60000]\nloss: 1.108833  [44864/60000]\nloss: 1.142090  [51264/60000]\nloss: 1.046886  [57664/60000]\nTest Error: \n Accuracy: 64.6%, Avg loss: 1.076086 \n\nDone!\n","output_type":"stream"}]},{"cell_type":"code","source":"# Save model parameters\ntorch.save(model.state_dict(), 'model_v1.pth')","metadata":{"execution":{"iopub.status.busy":"2024-04-25T20:26:21.231722Z","iopub.execute_input":"2024-04-25T20:26:21.232229Z","iopub.status.idle":"2024-04-25T20:26:21.243610Z","shell.execute_reply.started":"2024-04-25T20:26:21.232190Z","shell.execute_reply":"2024-04-25T20:26:21.242148Z"},"trusted":true},"execution_count":53,"outputs":[]},{"cell_type":"code","source":"# Load model\nmodel_v1 = NeuralNetwork().to(device)\nmodel_v1.load_state_dict(torch.load('model_v1.pth'))","metadata":{"execution":{"iopub.status.busy":"2024-04-25T20:27:51.021483Z","iopub.execute_input":"2024-04-25T20:27:51.021919Z","iopub.status.idle":"2024-04-25T20:27:51.044628Z","shell.execute_reply.started":"2024-04-25T20:27:51.021870Z","shell.execute_reply":"2024-04-25T20:27:51.043435Z"},"trusted":true},"execution_count":54,"outputs":[{"execution_count":54,"output_type":"execute_result","data":{"text/plain":"<All keys matched successfully>"},"metadata":{}}]},{"cell_type":"code","source":"# Labels\nclasses = [\n    \"T-shirt/top\",\n    \"Trouser\",\n    \"Pullover\",\n    \"Dress\",\n    \"Coat\",\n    \"Sandal\",\n    \"Shirt\",\n    \"Sneaker\",\n    \"Bag\",\n    \"Ankle boot\",\n]","metadata":{"execution":{"iopub.status.busy":"2024-04-25T20:31:10.386282Z","iopub.execute_input":"2024-04-25T20:31:10.386691Z","iopub.status.idle":"2024-04-25T20:31:10.391959Z","shell.execute_reply.started":"2024-04-25T20:31:10.386660Z","shell.execute_reply":"2024-04-25T20:31:10.390985Z"},"trusted":true},"execution_count":59,"outputs":[]},{"cell_type":"code","source":"# Inference\nX, y = test_data[0][0], test_data[0][1]\nmodel_v1.eval()\nwith torch.no_grad():\n    X = X.to(device)\n    pred = model(X)\n    print(\"Prediction: \", classes[pred[0].argmax(0).item()])\n    print(\"Actual: \", classes[y])","metadata":{"execution":{"iopub.status.busy":"2024-04-25T20:34:06.318300Z","iopub.execute_input":"2024-04-25T20:34:06.318721Z","iopub.status.idle":"2024-04-25T20:34:06.328590Z","shell.execute_reply.started":"2024-04-25T20:34:06.318690Z","shell.execute_reply":"2024-04-25T20:34:06.327329Z"},"trusted":true},"execution_count":69,"outputs":[{"name":"stdout","text":"Prediction:  Ankle boot\nActual:  Ankle boot\n","output_type":"stream"}]}]}
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "9232ec6a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:37:01.776076Z",
+     "iopub.status.busy": "2024-04-25T20:37:01.775054Z",
+     "iopub.status.idle": "2024-04-25T20:37:08.558635Z",
+     "shell.execute_reply": "2024-04-25T20:37:08.557411Z"
+    },
+    "papermill": {
+     "duration": 6.793736,
+     "end_time": "2024-04-25T20:37:08.561682",
+     "exception": false,
+     "start_time": "2024-04-25T20:37:01.767946",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import torch\n",
+    "from torch import nn\n",
+    "from torch.utils.data import DataLoader\n",
+    "from torchvision import datasets\n",
+    "from torchvision.transforms import ToTensor"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "b4a30682",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:37:08.575791Z",
+     "iopub.status.busy": "2024-04-25T20:37:08.574011Z",
+     "iopub.status.idle": "2024-04-25T20:37:10.126441Z",
+     "shell.execute_reply": "2024-04-25T20:37:10.124986Z"
+    },
+    "papermill": {
+     "duration": 1.561786,
+     "end_time": "2024-04-25T20:37:10.129096",
+     "exception": false,
+     "start_time": "2024-04-25T20:37:08.567310",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz\n",
+      "Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz to data/FashionMNIST/raw/train-images-idx3-ubyte.gz\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "100%|██████████| 26421880/26421880 [00:00<00:00, 115572947.56it/s]\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Extracting data/FashionMNIST/raw/train-images-idx3-ubyte.gz to data/FashionMNIST/raw\n",
+      "\n",
+      "Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz\n",
+      "Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz to data/FashionMNIST/raw/train-labels-idx1-ubyte.gz\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "100%|██████████| 29515/29515 [00:00<00:00, 4920109.80it/s]"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Extracting data/FashionMNIST/raw/train-labels-idx1-ubyte.gz to data/FashionMNIST/raw\n",
+      "\n",
+      "Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz\n",
+      "Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz to data/FashionMNIST/raw/t10k-images-idx3-ubyte.gz\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "100%|██████████| 4422102/4422102 [00:00<00:00, 61301543.17it/s]\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Extracting data/FashionMNIST/raw/t10k-images-idx3-ubyte.gz to data/FashionMNIST/raw\n",
+      "\n",
+      "Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz\n",
+      "Downloading http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz to data/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "100%|██████████| 5148/5148 [00:00<00:00, 12929507.18it/s]"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Extracting data/FashionMNIST/raw/t10k-labels-idx1-ubyte.gz to data/FashionMNIST/raw\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Get testing data\n",
+    "train_data = datasets.FashionMNIST(\n",
+    "    root=\"data\",\n",
+    "    train=True,\n",
+    "    download=True,\n",
+    "    transform=ToTensor(),\n",
+    ")\n",
+    "\n",
+    "# Get testing data\n",
+    "test_data = datasets.FashionMNIST(\n",
+    "    root=\"data\",\n",
+    "    train=False,\n",
+    "    download=True,\n",
+    "    transform=ToTensor(),\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "e4c04169",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:37:10.141048Z",
+     "iopub.status.busy": "2024-04-25T20:37:10.140660Z",
+     "iopub.status.idle": "2024-04-25T20:37:10.201171Z",
+     "shell.execute_reply": "2024-04-25T20:37:10.200106Z"
+    },
+    "papermill": {
+     "duration": 0.069398,
+     "end_time": "2024-04-25T20:37:10.203546",
+     "exception": false,
+     "start_time": "2024-04-25T20:37:10.134148",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "X(features):\n",
+      "\tSHAPE = torch.Size([64, 1, 28, 28])\n",
+      "\tDTYPE = torch.float32\n",
+      "\tDIM = 4\n",
+      "y(labels):\n",
+      "\tSHAPE = torch.Size([64])\n",
+      "\tDTYPE = torch.int64\n",
+      "\tDIM = 1\n"
+     ]
+    }
+   ],
+   "source": [
+    "batch_size = 64\n",
+    "\n",
+    "# Create Dataloaders\n",
+    "train_dataloader = DataLoader(train_data, batch_size=batch_size)\n",
+    "test_dataloader = DataLoader(test_data, batch_size=batch_size)\n",
+    "\n",
+    "for X, y in train_dataloader:\n",
+    "    print(f\"X(features):\", f\"SHAPE = {X.shape}\", f\"DTYPE = {X.dtype}\", \n",
+    "          f\"DIM = {X.ndim}\", sep='\\n\\t')\n",
+    "    print(f\"y(labels):\", f\"SHAPE = {y.shape}\", f\"DTYPE = {y.dtype}\", \n",
+    "          f\"DIM = {y.ndim}\", sep='\\n\\t')\n",
+    "    break"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "5f0adb7a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:37:10.218027Z",
+     "iopub.status.busy": "2024-04-25T20:37:10.216920Z",
+     "iopub.status.idle": "2024-04-25T20:37:10.223210Z",
+     "shell.execute_reply": "2024-04-25T20:37:10.222152Z"
+    },
+    "papermill": {
+     "duration": 0.016981,
+     "end_time": "2024-04-25T20:37:10.225724",
+     "exception": false,
+     "start_time": "2024-04-25T20:37:10.208743",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Using cpu device\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Get cpu, gpu or mps device for training.\n",
+    "device = (\n",
+    "    \"cuda\"\n",
+    "    if torch.cuda.is_available()\n",
+    "    else \"mps\"\n",
+    "    if torch.backends.mps.is_available()\n",
+    "    else \"cpu\"\n",
+    ")\n",
+    "print(f\"Using {device} device\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "c49bf68f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:37:10.238349Z",
+     "iopub.status.busy": "2024-04-25T20:37:10.237991Z",
+     "iopub.status.idle": "2024-04-25T20:37:10.258482Z",
+     "shell.execute_reply": "2024-04-25T20:37:10.255520Z"
+    },
+    "papermill": {
+     "duration": 0.029647,
+     "end_time": "2024-04-25T20:37:10.261010",
+     "exception": false,
+     "start_time": "2024-04-25T20:37:10.231363",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "NeuralNetwork(\n",
+      "  (flatten): Flatten(start_dim=1, end_dim=-1)\n",
+      "  (linear_relu_stack): Sequential(\n",
+      "    (0): Linear(in_features=784, out_features=512, bias=True)\n",
+      "    (1): ReLU()\n",
+      "    (2): Linear(in_features=512, out_features=512, bias=True)\n",
+      "    (3): ReLU()\n",
+      "    (4): Linear(in_features=512, out_features=10, bias=True)\n",
+      "  )\n",
+      ")\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Define model\n",
+    "class NeuralNetwork(nn.Module):\n",
+    "    def __init__(self):\n",
+    "        super().__init__()\n",
+    "        self.flatten = nn.Flatten()\n",
+    "        self.linear_relu_stack = nn.Sequential(\n",
+    "            nn.Linear(28*28, 512),\n",
+    "            nn.ReLU(),\n",
+    "            nn.Linear(512, 512),\n",
+    "            nn.ReLU(),\n",
+    "            nn.Linear(512, 10)\n",
+    "        )\n",
+    "\n",
+    "    def forward(self, x):\n",
+    "        x = self.flatten(x)\n",
+    "        logits = self.linear_relu_stack(x)\n",
+    "        return logits\n",
+    "    \n",
+    "model = NeuralNetwork().to(device)\n",
+    "print(model)\n",
+    "\n",
+    "# Define loss function and optimizer (to train model)\n",
+    "loss_fn = nn.CrossEntropyLoss()\n",
+    "optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "204c3e66",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:37:10.273876Z",
+     "iopub.status.busy": "2024-04-25T20:37:10.272952Z",
+     "iopub.status.idle": "2024-04-25T20:37:10.280567Z",
+     "shell.execute_reply": "2024-04-25T20:37:10.279413Z"
+    },
+    "papermill": {
+     "duration": 0.016496,
+     "end_time": "2024-04-25T20:37:10.282850",
+     "exception": false,
+     "start_time": "2024-04-25T20:37:10.266354",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def train(dataloader, model, loss_fn, optim):\n",
+    "    model.train()    \n",
+    "    size = len(dataloader.dataset)\n",
+    "    \n",
+    "    for i, (X,y) in enumerate(dataloader):\n",
+    "        X, y = X.to(device), y.to(device)\n",
+    "        \n",
+    "        # Predict and compute error\n",
+    "        pred = model(X)\n",
+    "        loss = loss_fn(pred, y)\n",
+    "        \n",
+    "        # Backward propogation\n",
+    "        loss.backward()\n",
+    "        optim.step()\n",
+    "        optim.zero_grad()\n",
+    "        \n",
+    "        if i % 100 == 0:\n",
+    "            loss, current = loss.item(), (i + 1) * len(X)\n",
+    "            print(f\"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "2a3962a7",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:37:10.295169Z",
+     "iopub.status.busy": "2024-04-25T20:37:10.294799Z",
+     "iopub.status.idle": "2024-04-25T20:37:10.301790Z",
+     "shell.execute_reply": "2024-04-25T20:37:10.300420Z"
+    },
+    "papermill": {
+     "duration": 0.015811,
+     "end_time": "2024-04-25T20:37:10.303949",
+     "exception": false,
+     "start_time": "2024-04-25T20:37:10.288138",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def test(dataloader, model, loss_fn):\n",
+    "    model.eval()\n",
+    "    size = len(dataloader.dataset)\n",
+    "    n_batches = len(dataloader) # 60000/64\n",
+    "    test_loss, correct = 0, 0\n",
+    "    \n",
+    "    with torch.no_grad():\n",
+    "        for X, y in dataloader:\n",
+    "            X, y = X.to(device), y.to(device)\n",
+    "            pred = model(X)\n",
+    "            test_loss += loss_fn(pred, y).item()\n",
+    "            correct += (pred.argmax(1) == y).type(torch.float).sum().item()\n",
+    "    test_loss /= n_batches\n",
+    "    correct /= size\n",
+    "    \n",
+    "    print(f\"Test Error: \\n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \\n\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "c97e2fd6",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:37:10.317226Z",
+     "iopub.status.busy": "2024-04-25T20:37:10.316507Z",
+     "iopub.status.idle": "2024-04-25T20:38:10.061525Z",
+     "shell.execute_reply": "2024-04-25T20:38:10.060479Z"
+    },
+    "papermill": {
+     "duration": 59.754228,
+     "end_time": "2024-04-25T20:38:10.063907",
+     "exception": false,
+     "start_time": "2024-04-25T20:37:10.309679",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1\n",
+      "-------------------------------\n",
+      "loss: 2.292366  [   64/60000]\n",
+      "loss: 2.288622  [ 6464/60000]\n",
+      "loss: 2.265862  [12864/60000]\n",
+      "loss: 2.267689  [19264/60000]\n",
+      "loss: 2.237270  [25664/60000]\n",
+      "loss: 2.221591  [32064/60000]\n",
+      "loss: 2.230138  [38464/60000]\n",
+      "loss: 2.197436  [44864/60000]\n",
+      "loss: 2.195904  [51264/60000]\n",
+      "loss: 2.161694  [57664/60000]\n",
+      "Test Error: \n",
+      " Accuracy: 45.5%, Avg loss: 2.153522 \n",
+      "\n",
+      "Epoch 2\n",
+      "-------------------------------\n",
+      "loss: 2.162587  [   64/60000]\n",
+      "loss: 2.157302  [ 6464/60000]\n",
+      "loss: 2.089392  [12864/60000]\n",
+      "loss: 2.113207  [19264/60000]\n",
+      "loss: 2.057113  [25664/60000]\n",
+      "loss: 2.013660  [32064/60000]\n",
+      "loss: 2.035962  [38464/60000]\n",
+      "loss: 1.960397  [44864/60000]\n",
+      "loss: 1.965032  [51264/60000]\n",
+      "loss: 1.888126  [57664/60000]\n",
+      "Test Error: \n",
+      " Accuracy: 55.3%, Avg loss: 1.881214 \n",
+      "\n",
+      "Epoch 3\n",
+      "-------------------------------\n",
+      "loss: 1.912860  [   64/60000]\n",
+      "loss: 1.889398  [ 6464/60000]\n",
+      "loss: 1.751910  [12864/60000]\n",
+      "loss: 1.802319  [19264/60000]\n",
+      "loss: 1.699162  [25664/60000]\n",
+      "loss: 1.657418  [32064/60000]\n",
+      "loss: 1.671972  [38464/60000]\n",
+      "loss: 1.572947  [44864/60000]\n",
+      "loss: 1.593661  [51264/60000]\n",
+      "loss: 1.486345  [57664/60000]\n",
+      "Test Error: \n",
+      " Accuracy: 60.4%, Avg loss: 1.502159 \n",
+      "\n",
+      "Epoch 4\n",
+      "-------------------------------\n",
+      "loss: 1.563241  [   64/60000]\n",
+      "loss: 1.539907  [ 6464/60000]\n",
+      "loss: 1.367123  [12864/60000]\n",
+      "loss: 1.456060  [19264/60000]\n",
+      "loss: 1.344390  [25664/60000]\n",
+      "loss: 1.341342  [32064/60000]\n",
+      "loss: 1.355187  [38464/60000]\n",
+      "loss: 1.277136  [44864/60000]\n",
+      "loss: 1.310490  [51264/60000]\n",
+      "loss: 1.211190  [57664/60000]\n",
+      "Test Error: \n",
+      " Accuracy: 63.5%, Avg loss: 1.237173 \n",
+      "\n",
+      "Epoch 5\n",
+      "-------------------------------\n",
+      "loss: 1.307213  [   64/60000]\n",
+      "loss: 1.301589  [ 6464/60000]\n",
+      "loss: 1.114906  [12864/60000]\n",
+      "loss: 1.238695  [19264/60000]\n",
+      "loss: 1.120793  [25664/60000]\n",
+      "loss: 1.145911  [32064/60000]\n",
+      "loss: 1.170699  [38464/60000]\n",
+      "loss: 1.102922  [44864/60000]\n",
+      "loss: 1.139938  [51264/60000]\n",
+      "loss: 1.057978  [57664/60000]\n",
+      "Test Error: \n",
+      " Accuracy: 65.0%, Avg loss: 1.078244 \n",
+      "\n",
+      "Done!\n"
+     ]
+    }
+   ],
+   "source": [
+    "epochs = 5\n",
+    "for t in range(epochs):\n",
+    "    print(f\"Epoch {t+1}\\n-------------------------------\")\n",
+    "    train(train_dataloader, model, loss_fn, optimizer)\n",
+    "    test(test_dataloader, model, loss_fn)\n",
+    "print(\"Done!\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "1d933aee",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:38:10.082516Z",
+     "iopub.status.busy": "2024-04-25T20:38:10.082135Z",
+     "iopub.status.idle": "2024-04-25T20:38:10.092359Z",
+     "shell.execute_reply": "2024-04-25T20:38:10.091076Z"
+    },
+    "papermill": {
+     "duration": 0.022784,
+     "end_time": "2024-04-25T20:38:10.095090",
+     "exception": false,
+     "start_time": "2024-04-25T20:38:10.072306",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Save model parameters\n",
+    "torch.save(model.state_dict(), 'model_v1.pth')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "1d9b296d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:38:10.114506Z",
+     "iopub.status.busy": "2024-04-25T20:38:10.114102Z",
+     "iopub.status.idle": "2024-04-25T20:38:10.134693Z",
+     "shell.execute_reply": "2024-04-25T20:38:10.133486Z"
+    },
+    "papermill": {
+     "duration": 0.032972,
+     "end_time": "2024-04-25T20:38:10.137279",
+     "exception": false,
+     "start_time": "2024-04-25T20:38:10.104307",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<All keys matched successfully>"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Load model\n",
+    "model_v1 = NeuralNetwork().to(device)\n",
+    "model_v1.load_state_dict(torch.load('model_v1.pth'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "68d8938b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:38:10.157757Z",
+     "iopub.status.busy": "2024-04-25T20:38:10.157365Z",
+     "iopub.status.idle": "2024-04-25T20:38:10.162628Z",
+     "shell.execute_reply": "2024-04-25T20:38:10.161621Z"
+    },
+    "papermill": {
+     "duration": 0.017645,
+     "end_time": "2024-04-25T20:38:10.164853",
+     "exception": false,
+     "start_time": "2024-04-25T20:38:10.147208",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Labels\n",
+    "classes = [\n",
+    "    \"T-shirt/top\",\n",
+    "    \"Trouser\",\n",
+    "    \"Pullover\",\n",
+    "    \"Dress\",\n",
+    "    \"Coat\",\n",
+    "    \"Sandal\",\n",
+    "    \"Shirt\",\n",
+    "    \"Sneaker\",\n",
+    "    \"Bag\",\n",
+    "    \"Ankle boot\",\n",
+    "]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "aba01f9c",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-04-25T20:38:10.184507Z",
+     "iopub.status.busy": "2024-04-25T20:38:10.184079Z",
+     "iopub.status.idle": "2024-04-25T20:38:10.196877Z",
+     "shell.execute_reply": "2024-04-25T20:38:10.195519Z"
+    },
+    "papermill": {
+     "duration": 0.025561,
+     "end_time": "2024-04-25T20:38:10.199418",
+     "exception": false,
+     "start_time": "2024-04-25T20:38:10.173857",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prediction:  Ankle boot\n",
+      "Actual:  Ankle boot\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Inference\n",
+    "X, y = test_data[0][0], test_data[0][1]\n",
+    "model_v1.eval()\n",
+    "with torch.no_grad():\n",
+    "    X = X.to(device)\n",
+    "    pred = model(X)\n",
+    "    print(\"Prediction: \", classes[pred[0].argmax(0).item()])\n",
+    "    print(\"Actual: \", classes[y])"
+   ]
+  }
+ ],
+ "metadata": {
+  "kaggle": {
+   "accelerator": "none",
+   "dataSources": [],
+   "dockerImageVersionId": 30698,
+   "isGpuEnabled": false,
+   "isInternetEnabled": true,
+   "language": "python",
+   "sourceType": "notebook"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.13"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 72.581342,
+   "end_time": "2024-04-25T20:38:11.432306",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2024-04-25T20:36:58.850964",
+   "version": "2.5.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
